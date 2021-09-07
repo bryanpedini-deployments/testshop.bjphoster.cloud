@@ -39,7 +39,7 @@ services:
       - traefik.http.routers.https-testshop_bjphoster_cloud.tls=true
       - traefik.http.routers.https-testshop_bjphoster_cloud.tls.certresolver=letsencrypt
     networks:
-      - traefik_proxy
+      - traefik-proxy
       - internal
     restart: unless-stopped
     volumes:
