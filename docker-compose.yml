@@ -49,7 +49,7 @@ services:
 
 networks:
   internal:
-  traefik_proxy:
+  traefik-proxy:
     external: true
 
 volumes:
