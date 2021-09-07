@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+  db:
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_USER=${MYSQL_USER}
+    image: ${MYSQL_VERSION}
+    networks:
+      - internal
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/mysql
+  wp:
+    depends_on:
+      - db
+    environment:
+      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_NAME=${MYSQL_DATABASE}
+      - WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
+      - WORDPRESS_DB_USER=${MYSQL_USER}
+      - WORDPRESS_TABLE_PREFIX=${WP_TABLE_PREFIX}
+    image: ${WP_VERSION}
+    labels:
+      - traefik.docker.network=traefik-proxy
+      - traefik.enable=true
+      ### Section HTTP
+      - traefik.http.routers.http-testshop_bjphoster_cloud.entrypoints=http
+      # redirect to HTTPS only
+      - traefik.http.routers.http-testshop_bjphoster_cloud.middlewares=http-to-https
+      - traefik.http.routers.http-testshop_bjphoster_cloud.rule=Host(`testshop.bjphoster.cloud`)
+      ### Section HTTPS
+      - traefik.http.routers.https-testshop_bjphoster_cloud.entrypoints=https
+      # configure the exposed service
+      - traefik.http.routers.https-testshop_bjphoster_cloud.rule=Host(`testshop.bjphoster.cloud`)
+      # of course, enable TLS and it's certificate provider
+      - traefik.http.routers.https-testshop_bjphoster_cloud.tls=true
+      - traefik.http.routers.https-testshop_bjphoster_cloud.tls.certresolver=letsencrypt
+    networks:
+      - traefik_proxy
+      - internal
+    restart: unless-stopped
+    volumes:
+      - wp_data:/var/www/html
+      - wp_content:/var/www/html/wp-content
+      - ./conf/custom.php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+
+networks:
+  internal:
+  traefik_proxy:
+    external: true
+
+volumes:
+  db_data:
+  wp_data:
+  wp_content:
